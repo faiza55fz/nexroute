@@ -1,0 +1,10 @@
+{
+  "description": "This AI-powered logistics dashboard provides real-time disruption monitoring and route optimization for emergency services in the North Eastern Region, ensuring timely delivery of essential supplies.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
