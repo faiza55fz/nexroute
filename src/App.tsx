@@ -1,3 +1,13 @@
+import {
+  MapContainer,
+  TileLayer,
+  CircleMarker,
+  Polyline,
+  Popup,
+} from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+
+
 import React, { useState, type ReactNode } from "react";
 import { VehiclesScreen } from "./screens/VehiclesScreen";
 import { RoutesScreen } from "./screens/RoutesScreen";
@@ -139,6 +149,7 @@ function KpiCard({
 }
 
 // ─── Map SVG ──────────────────────────────────────────────────────────────────
+// ─── Real GIS Map ─────────────────────────────────────────────────────────────
 
 function NexRouteMap({
   routeState,
@@ -147,205 +158,205 @@ function NexRouteMap({
   routeState: RouteState;
   onDisruptionClick: () => void;
 }) {
-  const [hovered, setHovered] = useState<string | null>(null);
+  // Siliguri → Gangtok demo coordinates
+  // These are geographic coordinates used for the MVP visualization.
+  const siliguri: [number, number] = [26.7271, 88.3953];
+
+  const gangtok: [number, number] = [27.3389, 88.6065];
+
+  // Current route — simplified demo geometry
+  const currentRoute: [number, number][] = [
+    [26.7271, 88.3953],
+    [26.82, 88.42],
+    [26.92, 88.47],
+    [27.02, 88.51],
+    [27.12, 88.55],
+    [27.22, 88.58],
+    [27.3389, 88.6065],
+  ];
+
+  // Alternate route — simplified demo geometry
+  const alternateRoute: [number, number][] = [
+    [26.7271, 88.3953],
+    [26.79, 88.34],
+    [26.88, 88.37],
+    [26.99, 88.43],
+    [27.10, 88.48],
+    [27.21, 88.55],
+    [27.3389, 88.6065],
+  ];
+
+  // Approximate disruption location for the MVP scenario
+  const disruption: [number, number] = [27.02, 88.51];
+
+  // Vehicle position changes after alternate route is applied
+  const vehiclePosition: [number, number] =
+    routeState === "original"
+      ? [26.92, 88.47]
+      : [26.88, 88.37];
 
   return (
-    <div className="relative w-full h-full bg-slate-50 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-      <svg width="100%" height="100%" viewBox="0 0 680 440" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
-            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#E2E8F0" strokeWidth="0.5" />
-          </pattern>
-          <radialGradient id="rain-gradient" cx="50%" cy="40%" r="50%">
-            <stop offset="0%" stopColor="#BFDBFE" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#BFDBFE" stopOpacity="0" />
-          </radialGradient>
-          <marker id="arrow-green" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill="#10B981" />
-          </marker>
-          <marker id="arrow-red" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill="#EF4444" />
-          </marker>
-          <marker id="arrow-blue" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill="#3B82F6" />
-          </marker>
-        </defs>
-
-        <rect width="680" height="440" fill="#F8FAFC" />
-        <rect width="680" height="440" fill="url(#grid)" />
-
-        {/* Terrain */}
-        <ellipse cx="160" cy="80" rx="120" ry="60" fill="#E8F4E8" opacity="0.6" />
-        <ellipse cx="520" cy="100" rx="140" ry="70" fill="#E8F4E8" opacity="0.5" />
-        <ellipse cx="400" cy="300" rx="100" ry="50" fill="#EFF6FF" opacity="0.6" />
-        <ellipse cx="80" cy="350" rx="80" ry="40" fill="#E8F4E8" opacity="0.4" />
-        <ellipse cx="600" cy="380" rx="90" ry="45" fill="#E8F4E8" opacity="0.4" />
-
-        {/* Teesta River */}
-        <path
-          d="M 120 400 C 160 370 180 330 200 300 C 220 270 230 250 250 220 C 270 190 290 170 320 155 C 350 140 370 130 390 110"
-          stroke="#BAE6FD" strokeWidth="5" fill="none" opacity="0.8"
+    <div className="relative w-full h-full rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+      <MapContainer
+        center={gangtok}
+        zoom={9}
+        scrollWheelZoom={true}
+        style={{ height: "100%", width: "100%" }}
+      >
+        {/* OpenStreetMap base map */}
+        <TileLayer
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution="&copy; OpenStreetMap contributors"
         />
-        <text x="210" y="348" fill="#7DD3FC" fontSize="9" opacity="0.9" transform="rotate(-45,210,348)">Teesta River</text>
 
-        {/* Secondary roads */}
-        <path d="M 60 200 L 150 220 L 220 210" stroke="#CBD5E1" strokeWidth="1.5" fill="none" strokeDasharray="4,3" />
-        <path d="M 500 50 L 540 90 L 570 130 L 590 180" stroke="#CBD5E1" strokeWidth="1.5" fill="none" strokeDasharray="4,3" />
-        <path d="M 60 380 L 130 350 L 180 330 L 220 315" stroke="#CBD5E1" strokeWidth="1.5" fill="none" />
-        <path d="M 440 380 L 480 340 L 520 310 L 560 290 L 600 260" stroke="#CBD5E1" strokeWidth="1.5" fill="none" />
-        <path d="M 320 155 L 380 170 L 430 190 L 470 210" stroke="#CBD5E1" strokeWidth="1.5" fill="none" strokeDasharray="4,3" />
-
-        {/* NH-10 primary route */}
-        <path
-          d="M 120 380 L 160 340 L 200 300 L 240 265 L 270 240 L 295 218 L 315 200 L 335 180 L 360 158 L 390 135 L 420 118 L 455 105 L 490 100"
-          stroke={routeState === "original" ? "#3B82F6" : "#EF4444"}
-          strokeWidth={routeState === "original" ? 4 : 3}
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeDasharray={routeState === "alternate" ? "6,4" : "none"}
-          opacity={routeState === "alternate" ? 0.6 : 1}
-          markerEnd={routeState === "original" ? "url(#arrow-blue)" : "url(#arrow-red)"}
+        {/* Current / original route */}
+        <Polyline
+          positions={currentRoute}
+          pathOptions={{
+            color: routeState === "original" ? "#3B82F6" : "#EF4444",
+            weight: routeState === "original" ? 5 : 3,
+            opacity: routeState === "original" ? 1 : 0.45,
+            dashArray: routeState === "original" ? undefined : "8 8",
+          }}
         />
-        <text x="230" y="252" fill={routeState === "alternate" ? "#EF4444" : "#2563EB"} fontSize="10" fontWeight="600" opacity="0.9">
-          NH-10
-        </text>
 
         {/* Alternate route */}
-        <path
-          d="M 120 380 L 100 350 L 90 310 L 95 270 L 110 230 L 135 200 L 165 175 L 200 155 L 240 140 L 285 128 L 330 120 L 375 112 L 420 107 L 455 105 L 490 100"
-          stroke={routeState === "alternate" ? "#10B981" : "#94A3B8"}
-          strokeWidth={routeState === "alternate" ? 4 : 2}
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeDasharray={routeState === "original" ? "5,5" : "none"}
-          opacity={routeState === "original" ? 0.5 : 1}
-          markerEnd={routeState === "alternate" ? "url(#arrow-green)" : undefined}
+        <Polyline
+          positions={alternateRoute}
+          pathOptions={{
+            color: routeState === "alternate" ? "#10B981" : "#94A3B8",
+            weight: routeState === "alternate" ? 5 : 3,
+            opacity: routeState === "alternate" ? 1 : 0.65,
+            dashArray: routeState === "alternate" ? undefined : "6 6",
+          }}
         />
-        {routeState === "alternate" && (
-          <text x="155" y="168" fill="#059669" fontSize="10" fontWeight="700">Alt Route</text>
-        )}
 
-        {/* Disruption zone */}
-        <ellipse cx="295" cy="225" rx="65" ry="55" fill="url(#rain-gradient)" opacity="0.8" />
-        <ellipse cx="295" cy="225" rx="65" ry="55" fill="none" stroke="#93C5FD" strokeWidth="1" strokeDasharray="4,4" opacity="0.7" />
+        {/* Siliguri origin */}
+        <CircleMarker
+          center={siliguri}
+          radius={7}
+          pathOptions={{
+            color: "#334155",
+            fillColor: "#475569",
+            fillOpacity: 1,
+            weight: 2,
+          }}
+        >
+          <Popup>
+            <strong>Siliguri</strong>
+            <br />
+            Vehicle origin
+          </Popup>
+        </CircleMarker>
 
-        {/* Rain streaks */}
-        {[260, 275, 290, 305, 320, 335].map((x, i) => (
-          <line key={i} x1={x} y1={195 + (i % 2) * 5} x2={x - 5} y2={215 + (i % 2) * 5} stroke="#93C5FD" strokeWidth="1" opacity="0.7" />
-        ))}
-        {[265, 280, 295, 310, 325].map((x, i) => (
-          <line key={i} x1={x} y1={220 + (i % 3) * 4} x2={x - 5} y2={240 + (i % 3) * 4} stroke="#93C5FD" strokeWidth="1" opacity="0.6" />
-        ))}
-
-        {/* Road block */}
-        <rect x="270" y="230" width="26" height="8" rx="2" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1" />
-        {[273, 278, 283, 288, 293].map((x, i) => (
-          <line key={i} x1={x} y1="230" x2={x - 3} y2="238" stroke="#F59E0B" strokeWidth="1" />
-        ))}
+        {/* Gangtok destination */}
+        <CircleMarker
+          center={gangtok}
+          radius={9}
+          pathOptions={{
+            color: "#4C1D95",
+            fillColor: "#7C3AED",
+            fillOpacity: 1,
+            weight: 2,
+          }}
+        >
+          <Popup>
+            <strong>Gangtok Medical Supply Hub</strong>
+            <br />
+            Essential goods destination
+          </Popup>
+        </CircleMarker>
 
         {/* Disruption marker */}
-        <g
-          transform="translate(295, 218)"
-          style={{ cursor: "pointer" }}
-          onClick={onDisruptionClick}
-          onMouseEnter={() => setHovered("disruption")}
-          onMouseLeave={() => setHovered(null)}
+        <CircleMarker
+          center={disruption}
+          radius={13}
+          pathOptions={{
+            color: "#EF4444",
+            fillColor: "#FECACA",
+            fillOpacity: 0.8,
+            weight: 3,
+          }}
+          eventHandlers={{
+            click: onDisruptionClick,
+          }}
         >
-          <circle cx="0" cy="0" r="18" fill="#FEE2E2" opacity="0.5" className="pulse-ring" />
-          <circle cx="0" cy="0" r="12" fill="#FECACA" opacity="0.7" />
-          <circle cx="0" cy="0" r="7" fill="#EF4444" />
-          <text x="0" y="4" textAnchor="middle" fontSize="8" fill="white" fontWeight="800">!</text>
-          <rect x="-38" y="-30" width="76" height="16" rx="4" fill="#1E293B" opacity="0.9" />
-          <text x="0" y="-18" textAnchor="middle" fontSize="9" fill="white" fontWeight="600">⚠ Landslide Risk</text>
-          {hovered === "disruption" && (
-            <text x="0" y="-42" textAnchor="middle" fontSize="8" fill="#94A3B8">Click for details</text>
-          )}
-        </g>
-
-        {/* Weather label */}
-        <g transform="translate(340, 185)">
-          <rect x="0" y="0" width="66" height="16" rx="4" fill="#DBEAFE" opacity="0.95" />
-          <text x="8" y="11" fontSize="8.5" fill="#1D4ED8" fontWeight="600">🌧 Heavy Rain</text>
-        </g>
+          <Popup>
+            <strong>⚠ Landslide Risk</strong>
+            <br />
+            NH-10 corridor
+            <br />
+            <span className="text-slate-500">
+              Click to view disruption details
+            </span>
+          </Popup>
+        </CircleMarker>
 
         {/* Vehicle marker */}
-        {routeState === "original" ? (
-          <g transform="translate(240, 266)">
-            <circle cx="0" cy="0" r="14" fill="#EFF6FF" stroke="#3B82F6" strokeWidth="2" />
-            <text x="0" y="4" textAnchor="middle" fontSize="8" fill="#1D4ED8" fontWeight="800">🚐</text>
-            <rect x="-22" y="-26" width="44" height="14" rx="3" fill="#1D4ED8" />
-            <text x="0" y="-15" textAnchor="middle" fontSize="8" fill="white" fontWeight="700">MED-07</text>
-            <circle cx="10" cy="-10" r="4" fill="#10B981" className="blink" />
-          </g>
-        ) : (
-          <g transform="translate(135, 195)">
-            <circle cx="0" cy="0" r="14" fill="#F0FDF4" stroke="#10B981" strokeWidth="2" />
-            <text x="0" y="4" textAnchor="middle" fontSize="8" fill="#059669" fontWeight="800">🚐</text>
-            <rect x="-22" y="-26" width="44" height="14" rx="3" fill="#059669" />
-            <text x="0" y="-15" textAnchor="middle" fontSize="8" fill="white" fontWeight="700">MED-07</text>
-            <circle cx="10" cy="-10" r="4" fill="#10B981" className="blink" />
-          </g>
-        )}
+        <CircleMarker
+          center={vehiclePosition}
+          radius={10}
+          pathOptions={{
+            color: routeState === "original" ? "#2563EB" : "#059669",
+            fillColor: routeState === "original" ? "#DBEAFE" : "#D1FAE5",
+            fillOpacity: 1,
+            weight: 3,
+          }}
+        >
+          <Popup>
+            <strong>MED-07</strong>
+            <br />
+            Essential Medicines
+            <br />
+            Destination: Gangtok Medical Supply Hub
+            <br />
+            Status:{" "}
+            {routeState === "original"
+              ? "Affected by disruption"
+              : "Rerouted"}
+          </Popup>
+        </CircleMarker>
+      </MapContainer>
 
-        {/* Origin */}
-        <g transform="translate(120, 380)">
-          <circle cx="0" cy="0" r="7" fill="#475569" />
-          <circle cx="0" cy="0" r="4" fill="white" />
-          <rect x="-22" y="8" width="44" height="14" rx="3" fill="#334155" opacity="0.9" />
-          <text x="0" y="19" textAnchor="middle" fontSize="8" fill="white">Siliguri</text>
-        </g>
-
-        {/* Destination */}
-        <g transform="translate(490, 100)">
-          <circle cx="0" cy="0" r="9" fill="#7C3AED" />
-          <circle cx="0" cy="0" r="5" fill="white" />
-          <rect x="-52" y="-28" width="104" height="22" rx="4" fill="#4C1D95" opacity="0.95" />
-          <text x="0" y="-15" textAnchor="middle" fontSize="8.5" fill="white" fontWeight="600">Gangtok Medical</text>
-          <text x="0" y="-5" textAnchor="middle" fontSize="7.5" fill="#C4B5FD">Supply Hub</text>
-        </g>
-
-        {/* Legend */}
-        <g transform="translate(12, 358)">
-          <rect x="0" y="0" width="148" height="78" rx="6" fill="white" opacity="0.95" stroke="#E2E8F0" strokeWidth="1" />
-          <text x="8" y="14" fontSize="9" fill="#475569" fontWeight="700" letterSpacing="0.5">MAP LEGEND</text>
-          <line x1="8" y1="22" x2="140" y2="22" stroke="#E2E8F0" strokeWidth="0.5" />
-          {[
-            { color: "#10B981", label: "Accessible", y: 33 },
-            { color: "#F59E0B", label: "At Risk", y: 45 },
-            { color: "#EF4444", label: "Disrupted", y: 57 },
-            { color: "#3B82F6", label: "Vehicle Route", y: 69 },
-          ].map(({ color, label, y }) => (
-            <g key={label}>
-              <rect x="8" y={y - 6} width="14" height="5" rx="1.5" fill={color} />
-              <text x="28" y={y} fontSize="8.5" fill="#64748B">{label}</text>
-            </g>
-          ))}
-        </g>
-
-        {/* Compass */}
-        <g transform="translate(640, 28)">
-          <circle cx="0" cy="0" r="14" fill="white" stroke="#E2E8F0" strokeWidth="1" opacity="0.95" />
-          <text x="0" y="-6" textAnchor="middle" fontSize="8" fill="#1E293B" fontWeight="700">N</text>
-          <line x1="0" y1="-3" x2="0" y2="5" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" />
-          <line x1="0" y1="-3" x2="-4" y2="4" stroke="#CBD5E1" strokeWidth="1" strokeLinecap="round" />
-          <line x1="0" y1="-3" x2="4" y2="4" stroke="#CBD5E1" strokeWidth="1" strokeLinecap="round" />
-        </g>
-
-        {/* Scale */}
-        <g transform="translate(560, 412)">
-          <line x1="0" y1="0" x2="80" y2="0" stroke="#94A3B8" strokeWidth="1" />
-          <line x1="0" y1="-3" x2="0" y2="3" stroke="#94A3B8" strokeWidth="1" />
-          <line x1="80" y1="-3" x2="80" y2="3" stroke="#94A3B8" strokeWidth="1" />
-          <text x="40" y="-5" textAnchor="middle" fontSize="8" fill="#94A3B8">50 km</text>
-        </g>
-      </svg>
-
-      {/* Live badge */}
-      <div className="absolute top-3 right-10 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm">
+      {/* Live / demo status */}
+      <div className="absolute top-3 right-10 z-[1000] flex items-center gap-1.5 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm">
         <div className="w-2 h-2 rounded-full bg-emerald-500 blink" />
-        <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider">Live</span>
+        <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider">
+          Live Map
+        </span>
+      </div>
+
+      {/* Map legend */}
+      <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-sm border border-slate-200 rounded-lg px-3 py-2.5 shadow-sm">
+        <div className="text-[9px] font-bold text-slate-500 tracking-wider mb-2">
+          MAP LEGEND
+        </div>
+
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className="w-5 h-1 rounded bg-blue-500" />
+          <span className="text-[9px] text-slate-600">
+            Current Route
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className="w-5 h-1 rounded bg-emerald-500" />
+          <span className="text-[9px] text-slate-600">
+            Alternate Route
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-red-500 border-2 border-red-200" />
+          <span className="text-[9px] text-slate-600">
+            Disruption
+          </span>
+        </div>
+      </div>
+
+      {/* Map source */}
+      <div className="absolute bottom-1 right-2 z-[1000] text-[8px] text-slate-500 bg-white/80 px-1.5 py-0.5 rounded">
+        © OpenStreetMap contributors
       </div>
     </div>
   );
