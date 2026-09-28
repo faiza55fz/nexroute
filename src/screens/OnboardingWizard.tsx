@@ -1,19 +1,59 @@
 import { useState } from 'react'
 import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react'
 import type { Screen } from '../App'
+interface Props {
+  setScreen: (s: Screen) => void
+  onComplete?: () => void
+  userId: number | null
+}
 
-interface Props { setScreen: (s: Screen) => void; onComplete?: () => void }
-
-export default function OnboardingWizard({ setScreen, onComplete }: Props) {
+export default function OnboardingWizard({ setScreen, onComplete, userId }: Props) {
   const [step, setStep] = useState(1)
   const steps = ['Project Profile', 'Sector & Location', 'Project Size', 'Project Stage']
   const [project, setProject] = useState({ name: '', sector: '', location: '', investment: '', stage: '' })
 
-  const next = () => {
-    if (step < 4) setStep(step + 1)
-    else if (onComplete) onComplete()
-    else setScreen('approvals')
+  const next = async () => {
+  if (step < 4) {
+    setStep(step + 1)
+    return
   }
+
+  if (!userId) {
+    alert('Please login again')
+    return
+  }
+
+  try {
+    const response = await fetch('http://127.0.0.1:5000/projects', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: project.name,
+        industry: project.sector,
+        location: project.location,
+        size: project.investment,
+        stage: project.stage,
+        user_id: userId,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      alert(data.message || 'Failed to create project')
+      return
+    }
+
+    alert(`Project created successfully. Project ID: ${data.project_id}`)
+
+    if (onComplete) onComplete()
+    else if (setScreen) setScreen('approvals')
+  } catch {
+    alert('Cannot connect to backend')
+  }
+}
 
   return <div style={{ padding: 24, maxWidth: 900 }}>
     <div style={{ marginBottom: 24 }}><div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Project Onboarding</div><h1 style={{ fontFamily: 'DM Sans', fontSize: 24, color: '#0D1B2E', margin: '4px 0' }}>Create Project Profile</h1><div style={{ fontSize: 12, color: '#64748B' }}>Tell us about the project so the approval roadmap can be personalised.</div></div>

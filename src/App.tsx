@@ -38,12 +38,14 @@ export type Screen =
 export default function App() {
   const [screen, setScreen] = useState<Screen>('login')
   const [role, setRole] = useState<Role>('applicant')
+  const [userId, setUserId] = useState<number | null>(null)
 
   if (screen === 'login') {
     return (
       <LoginScreen
-        onLogin={(r) => {
+        onLogin={(r, userId) => {
           setRole(r)
+          setUserId(userId)
           setScreen(r === 'applicant' ? 'dashboard' : 'gov-dashboard')
         }}
       />
@@ -54,7 +56,11 @@ export default function App() {
     return (
       <div className="main-content">
         <Topbar role={role} screen={screen} setScreen={setScreen} onLogout={() => setScreen('login')} />
-        <OnboardingWizard onComplete={() => setScreen('approvals')} />
+        <OnboardingWizard
+  userId={userId}
+  setScreen={setScreen}
+  onComplete={() => setScreen('approvals')}
+/>
       </div>
     )
   }

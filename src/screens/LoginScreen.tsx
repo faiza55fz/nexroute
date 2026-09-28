@@ -3,7 +3,7 @@ import { Building2, ArrowRight, Shield, Compass, CheckCircle, Layers } from 'luc
 import type { Role } from '../App'
 
 interface Props {
-  onLogin: (role: Role) => void
+  onLogin: (role: Role, userId: number) => void
 }
 
 const roles = [
@@ -40,7 +40,37 @@ const ecosystem = ['MAITRI', 'MIDC Single Window', 'NSWS', 'Dept Portals']
 const intelligence = ['DISCOVER', 'VALIDATE', 'COORDINATE', 'PREDICT', 'ESCALATE', 'COMPLY']
 
 export default function LoginScreen({ onLogin }: Props) {
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
   const [selected, setSelected] = useState<Role>('applicant')
+  const handleLogin = async () => {
+  setError('')
+
+  try {
+    const response = await fetch('http://127.0.0.1:5000/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: username,
+        password: password,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      setError(data.message || 'Login failed')
+      return
+    }
+
+    onLogin(data.user.role.toLowerCase() as Role, data.user.id)
+  } catch {
+    setError('Cannot connect to backend')
+  }
+}
 
   return (
     <div style={{
@@ -216,8 +246,9 @@ export default function LoginScreen({ onLogin }: Props) {
               Username / UAN / Employee ID
             </label>
             <input
-              defaultValue={selected === 'applicant' ? 'MH-APP-2024-0341' : selected === 'officer' ? 'MH-OFF-IND-0087' : 'MH-NDA-001'}
-              style={{
+             value={username}
+             onChange={e => setUsername(e.target.value)}
+             style={{
                 width: '100%', padding: '9px 12px', borderRadius: 6,
                 border: '1px solid #CBD5E1', fontSize: 13, background: 'white',
                 outline: 'none', color: '#0D1B2E'
@@ -230,7 +261,8 @@ export default function LoginScreen({ onLogin }: Props) {
             </label>
             <input
               type="password"
-              defaultValue="••••••••"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
               style={{
                 width: '100%', padding: '9px 12px', borderRadius: 6,
                 border: '1px solid #CBD5E1', fontSize: 13, background: 'white',
@@ -241,7 +273,7 @@ export default function LoginScreen({ onLogin }: Props) {
         </div>
 
         <button
-          onClick={() => onLogin(selected)}
+          onClick={handleLogin}
           style={{
             width: '100%', padding: '12px 24px', borderRadius: 8,
             background: 'linear-gradient(135deg, #1B3A6B, #2563EB)',
