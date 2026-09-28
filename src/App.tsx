@@ -39,6 +39,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('login')
   const [role, setRole] = useState<Role>('applicant')
   const [userId, setUserId] = useState<number | null>(null)
+  const [projectId, setProjectId] = useState<number | null>(null)
 
   if (screen === 'login') {
     return (
@@ -59,7 +60,10 @@ export default function App() {
         <OnboardingWizard
   userId={userId}
   setScreen={setScreen}
-  onComplete={() => setScreen('approvals')}
+  onComplete={(id) => {
+  setProjectId(id)
+  setScreen('approvals')
+}}
 />
       </div>
     )
@@ -68,7 +72,7 @@ export default function App() {
   const renderScreen = () => {
     switch (screen) {
       case 'dashboard': return <ProjectDashboard setScreen={setScreen} />
-      case 'approvals': return <ApprovalDiscovery setScreen={setScreen} />
+      case 'approvals': return <ApprovalDiscovery setScreen={setScreen} projectId={projectId} />
       case 'dependency': return <DependencyGraph setScreen={setScreen} />
       case 'documents': return <DocumentReadiness setScreen={setScreen} />
       case 'sla': return <SLAMonitoring setScreen={setScreen} />

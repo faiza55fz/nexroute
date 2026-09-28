@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Filter, ChevronRight, Info, Clock, FileText, AlertCircle, CheckCircle, Layers } from 'lucide-react'
 import type { Screen } from '../App'
 
-interface Props { setScreen: (s: Screen) => void }
+interface Props {
+  setScreen: (s: Screen) => void
+  projectId: number | null
+}
 
 const approvals = [
   {
@@ -73,13 +76,31 @@ const statusBadge: Record<string, string> = {
 const applicabilityBadge: Record<string, string> = {
   Required: 'badge-navy', Conditional: 'badge-amber'
 }
+export default function ApprovalDiscovery({ setScreen, projectId }: Props) {
+  const [suggestedApprovals, setSuggestedApprovals] = useState<string[]>([])
+const [loading, setLoading] = useState(true)
 
-export default function ApprovalDiscovery({ setScreen }: Props) {
+useEffect(() => {
+  if (!projectId) return
+
+  fetch(`http://127.0.0.1:5000/approval-discovery/${projectId}`)
+    .then(res => res.json())
+    .then(data => {
+      setSuggestedApprovals(data.suggested_approvals || [])
+      setLoading(false)
+    })
+    .catch(() => {
+      setLoading(false)
+    })
+}, [projectId])
   const [catFilter, setCatFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
   const [expanded, setExpanded] = useState<number | null>(2)
+  const backendApprovals = approvals.filter(a =>
+  suggestedApprovals.includes(a.name)
+)
 
-  const filtered = approvals.filter(a => {
+  const filtered = backendApprovals.filter(a => {
     const catOk = catFilter === 'All' || a.category === catFilter
     const stOk = statusFilter === 'All' || a.applicability === statusFilter ||
       a.status.toLowerCase() === statusFilter.toLowerCase()

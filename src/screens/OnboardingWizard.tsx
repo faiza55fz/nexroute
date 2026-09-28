@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react'
 import type { Screen } from '../App'
 interface Props {
   setScreen: (s: Screen) => void
-  onComplete?: () => void
+  onComplete?: (projectId: number) => void
   userId: number | null
 }
 
@@ -48,7 +48,7 @@ export default function OnboardingWizard({ setScreen, onComplete, userId }: Prop
 
     alert(`Project created successfully. Project ID: ${data.project_id}`)
 
-    if (onComplete) onComplete()
+    if (onComplete) onComplete(data.project_id)
     else if (setScreen) setScreen('approvals')
   } catch {
     alert('Cannot connect to backend')
