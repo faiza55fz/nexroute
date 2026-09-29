@@ -58,6 +58,7 @@ export default function App() {
       <div className="main-content">
         <Topbar role={role} screen={screen} setScreen={setScreen} onLogout={() => setScreen('login')} />
         <OnboardingWizard
+<<<<<<< HEAD
   userId={userId}
   setScreen={setScreen}
   onComplete={(id) => {
@@ -65,6 +66,11 @@ export default function App() {
   setScreen('approvals')
 }}
 />
+=======
+          setScreen={setScreen}
+          onComplete={() => setScreen('approvals')}
+        />
+>>>>>>> f7abcaa (made changes)
       </div>
     )
   }
