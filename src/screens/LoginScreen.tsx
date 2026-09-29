@@ -45,9 +45,11 @@ export default function LoginScreen({ onLogin }: Props) {
   const [error, setError] = useState('')
   const [selected, setSelected] = useState<Role>('applicant')
   const handleLogin = async () => {
+  alert("LOGIN BUTTON CLICKED")
   setError('')
 
   try {
+    alert("CALLING BACKEND")
     const response = await fetch('http://127.0.0.1:5000/login', {
       method: 'POST',
       headers: {
@@ -60,6 +62,7 @@ export default function LoginScreen({ onLogin }: Props) {
     })
 
     const data = await response.json()
+    alert(JSON.stringify(data))
 
     if (!response.ok) {
       setError(data.message || 'Login failed')
@@ -67,9 +70,10 @@ export default function LoginScreen({ onLogin }: Props) {
     }
 
     onLogin(data.user.role.toLowerCase() as Role, data.user.id)
-  } catch {
-    setError('Cannot connect to backend')
-  }
+  } catch (error) {
+  alert("FETCH ERROR: " + error)
+  setError('Cannot connect to backend')
+}
 }
 
   return (

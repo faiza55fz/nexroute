@@ -97,7 +97,11 @@ useEffect(() => {
   const [statusFilter, setStatusFilter] = useState('All')
   const [expanded, setExpanded] = useState<number | null>(2)
   const backendApprovals = approvals.filter(a =>
-  suggestedApprovals.includes(a.name)
+  suggestedApprovals.some(name =>
+    a.name === name ||
+    a.name.includes(name) ||
+    name.includes(a.name)
+  )
 )
 
   const filtered = backendApprovals.filter(a => {

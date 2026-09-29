@@ -49,7 +49,7 @@ export default function App() {
         onLogin={(r, userId) => {
           setRole(r)
           setUserId(userId)
-          setScreen(r === 'applicant' ? 'dashboard' : 'gov-dashboard')
+          setScreen(r === 'applicant' ? 'onboarding' : 'gov-dashboard')
         }}
       />
     )
