@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import LoginScreen from './screens/LoginScreen'
 import Sidebar from './components/Sidebar'
@@ -18,6 +19,7 @@ import Analytics from './screens/Analytics'
 import OnboardingWizard from './screens/OnboardingWizard'
 
 export type Role = 'applicant' | 'officer' | 'admin'
+
 export type Screen =
   | 'login'
   | 'onboarding'
@@ -56,49 +58,93 @@ export default function App() {
   if (screen === 'onboarding') {
     return (
       <div className="main-content">
-        <Topbar role={role} screen={screen} setScreen={setScreen} onLogout={() => setScreen('login')} />
-        <OnboardingWizard
-<<<<<<< HEAD
-  userId={userId}
-  setScreen={setScreen}
-  onComplete={(id) => {
-  setProjectId(id)
-  setScreen('approvals')
-}}
-/>
-=======
+        <Topbar
+          role={role}
+          screen={screen}
           setScreen={setScreen}
-          onComplete={() => setScreen('approvals')}
+          onLogout={() => setScreen('login')}
         />
->>>>>>> f7abcaa (made changes)
+
+        <OnboardingWizard
+          userId={userId}
+          setScreen={setScreen}
+          onComplete={(id) => {
+            setProjectId(id)
+            setScreen('approvals')
+          }}
+        />
       </div>
     )
   }
 
   const renderScreen = () => {
     switch (screen) {
-      case 'dashboard': return <ProjectDashboard setScreen={setScreen} />
-      case 'approvals': return <ApprovalDiscovery setScreen={setScreen} projectId={projectId} />
-      case 'dependency': return <DependencyGraph setScreen={setScreen} />
-      case 'documents': return <DocumentReadiness setScreen={setScreen} />
-      case 'sla': return <SLAMonitoring setScreen={setScreen} />
-      case 'bottleneck': return <BottleneckIntelligence setScreen={setScreen} />
-      case 'inspection': return <InspectionCoordination setScreen={setScreen} />
-      case 'compliance': return <ComplianceDashboard setScreen={setScreen} />
-      case 'incentives': return <IncentivesSchemes setScreen={setScreen} />
-      case 'assistant': return <RegulatoryAssistant setScreen={setScreen} />
-      case 'gov-dashboard': return <GovDashboard setScreen={setScreen} />
-      case 'escalation': return <EscalationCenter setScreen={setScreen} />
-      case 'analytics': return <Analytics setScreen={setScreen} />
-      default: return <ProjectDashboard setScreen={setScreen} />
+      case 'dashboard':
+        return <ProjectDashboard setScreen={setScreen} />
+
+      case 'approvals':
+        return (
+          <ApprovalDiscovery
+            setScreen={setScreen}
+            projectId={projectId}
+          />
+        )
+
+      case 'dependency':
+        return <DependencyGraph setScreen={setScreen} />
+
+      case 'documents':
+        return <DocumentReadiness setScreen={setScreen} />
+
+      case 'sla':
+        return <SLAMonitoring setScreen={setScreen} />
+
+      case 'bottleneck':
+        return <BottleneckIntelligence setScreen={setScreen} />
+
+      case 'inspection':
+        return <InspectionCoordination setScreen={setScreen} />
+
+      case 'compliance':
+        return <ComplianceDashboard setScreen={setScreen} />
+
+      case 'incentives':
+        return <IncentivesSchemes setScreen={setScreen} />
+
+      case 'assistant':
+        return <RegulatoryAssistant setScreen={setScreen} />
+
+      case 'gov-dashboard':
+        return <GovDashboard setScreen={setScreen} />
+
+      case 'escalation':
+        return <EscalationCenter setScreen={setScreen} />
+
+      case 'analytics':
+        return <Analytics setScreen={setScreen} />
+
+      default:
+        return <ProjectDashboard setScreen={setScreen} />
     }
   }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar role={role} screen={screen} setScreen={setScreen} setRole={setRole} />
+      <Sidebar
+        role={role}
+        screen={screen}
+        setScreen={setScreen}
+        setRole={setRole}
+      />
+
       <div className="main-content" style={{ flex: 1 }}>
-        <Topbar role={role} screen={screen} setScreen={setScreen} onLogout={() => setScreen('login')} />
+        <Topbar
+          role={role}
+          screen={screen}
+          setScreen={setScreen}
+          onLogout={() => setScreen('login')}
+        />
+
         {renderScreen()}
       </div>
     </div>
