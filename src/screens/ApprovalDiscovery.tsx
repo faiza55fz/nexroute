@@ -1,9 +1,14 @@
-import { useState } from 'react'
+import { useEffect,useState } from 'react'
 import { Filter, ChevronRight, Info, Clock, FileText, AlertCircle, CheckCircle, Layers } from 'lucide-react'
 import type { Screen } from '../App'
 
-interface Props { setScreen: (s: Screen) => void }
-
+interface Props { setScreen: (s: Screen) => void 
+  projectId: number | null
+}
+interface Project {
+  id: number
+  name: string
+}
 const approvals = [
   {
     id: 1, name: 'Land Conversion / NA Order', dept: 'District Collector / Revenue Dept', category: 'Land',
@@ -74,10 +79,42 @@ const applicabilityBadge: Record<string, string> = {
   Required: 'badge-navy', Conditional: 'badge-amber'
 }
 
-export default function ApprovalDiscovery({ setScreen }: Props) {
+export default function ApprovalDiscovery({ setScreen, projectId }: Props) {
   const [catFilter, setCatFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
   const [expanded, setExpanded] = useState<number | null>(2)
+  const [projectName, setProjectName] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchProject = async () => {
+      if (projectId === null) {
+        setProjectName('')
+        return
+      }
+
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/v1/projects')
+        if (!response.ok) throw new Error('Could not load projects')
+
+        const projects: Project[] = await response.json()
+        const selectedProject = projects.find(p => p.id === projectId)
+
+        if (!cancelled) {
+          setProjectName(selectedProject?.name ?? 'Project not found')
+        }
+      } catch {
+        if (!cancelled) setProjectName('Could not load project')
+      }
+    }
+
+    fetchProject()
+
+    return () => {
+      cancelled = true
+    }
+  }, [projectId])
 
   const filtered = approvals.filter(a => {
     const catOk = catFilter === 'All' || a.category === catFilter
@@ -93,7 +130,7 @@ export default function ApprovalDiscovery({ setScreen }: Props) {
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 4 }}>
-          ABC Manufacturing Plant
+          {projectName || 'Select a project'}
         </div>
         <h1 style={{ fontFamily: 'DM Sans', fontSize: 22, fontWeight: 700, color: '#0D1B2E', marginBottom: 6 }}>
           Your Approval Roadmap

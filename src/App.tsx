@@ -104,9 +104,9 @@ export default function App() {
   const renderScreen = () => {
     switch (screen) {
       case 'dashboard':
-        return <ProjectDashboard setScreen={setScreen} />
+        return <ProjectDashboard setScreen={setScreen} projectId={projectId} />
       case 'approvals':
-        return <ApprovalDiscovery setScreen={setScreen} />
+        return <ApprovalDiscovery setScreen={setScreen} projectId={projectId} />
       case 'dependency':
         return <DependencyGraph setScreen={setScreen} />
       case 'documents':
@@ -130,7 +130,7 @@ export default function App() {
       case 'analytics':
         return <Analytics setScreen={setScreen} />
       default:
-        return <ProjectDashboard setScreen={setScreen} />
+        return <ProjectDashboard setScreen={setScreen} projectId={projectId} />
     }
   }
 

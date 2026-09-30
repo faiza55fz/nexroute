@@ -1,7 +1,20 @@
+import { useEffect, useState } from 'react'
 import { AlertTriangle, CheckCircle, Clock, FileText, ArrowRight, TrendingUp, Bell, Plus, ChevronRight } from 'lucide-react'
 import type { Screen } from '../App'
 
-interface Props { setScreen: (s: Screen) => void }
+interface Props {
+  setScreen: (s: Screen) => void
+  projectId: number | null
+}
+
+interface Project {
+  id: number
+  name: string
+  code: string
+  project_type: string | null
+  description: string | null
+  status: string
+}
 
 const kpis = [
   { label: 'Approval Readiness', value: '78%', sub: '14 of 18 approvals tracked', color: '#2563EB', bar: 78 },
@@ -44,7 +57,49 @@ const badgeClass: Record<string, string> = {
   HIGH: 'badge badge-red', MEDIUM: 'badge badge-amber', LOW: 'badge badge-blue'
 }
 
-export default function ProjectDashboard({ setScreen }: Props) {
+export default function ProjectDashboard({ setScreen, projectId }: Props) {
+  const [project, setProject] = useState<Project | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchProject = async () => {
+      setLoading(true)
+
+      if (projectId === null) {
+        setProject(null)
+        setLoading(false)
+        return
+      }
+
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/v1/projects')
+        if (!response.ok) throw new Error('Could not load projects')
+
+        const projects: Project[] = await response.json()
+        const selected = projects.find(p => p.id === projectId)
+
+        if (!cancelled) setProject(selected ?? null)
+      } catch {
+        if (!cancelled) setProject(null)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    fetchProject()
+
+    return () => {
+      cancelled = true
+    }
+  }, [projectId])
+
+  const details = project?.description?.split('\\n') ?? []
+  const location = details.find(d => d.startsWith('Location: '))?.replace('Location: ', '')
+  const investment = details.find(d => d.startsWith('Investment: '))?.replace('Investment: ', '')
+  const stage = details.find(d => d.startsWith('Stage: '))?.replace('Stage: ', '')
+
   return (
     <div style={{ padding: '24px', maxWidth: 1200 }}>
       {/* Header */}
@@ -54,18 +109,38 @@ export default function ProjectDashboard({ setScreen }: Props) {
             Project Overview
           </div>
           <h1 style={{ fontFamily: 'DM Sans', fontSize: 24, fontWeight: 700, color: '#0D1B2E', marginBottom: 4 }}>
-            ABC Manufacturing Plant
+            {loading ? 'Loading project...' : project?.name ?? 'No project selected'}
           </h1>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span className="badge badge-blue">IN PROGRESS</span>
-            <span style={{ fontSize: 12, color: '#64748B' }}>Pune, Maharashtra</span>
-            <span style={{ fontSize: 12, color: '#CBD5E1' }}>·</span>
-            <span style={{ fontSize: 12, color: '#64748B' }}>Chemical Manufacturing</span>
-            <span style={{ fontSize: 12, color: '#CBD5E1' }}>·</span>
-            <span style={{ fontSize: 12, color: '#64748B' }}>₹45 Cr Investment</span>
-            <span style={{ fontSize: 12, color: '#CBD5E1' }}>·</span>
-            <span style={{ fontSize: 12, color: '#64748B' }}>250 Employment</span>
-          </div>
+  <span className="badge badge-blue">
+    {(project?.status ?? 'UNKNOWN').replace('_', ' ').toUpperCase()}
+  </span>
+
+  {location && (
+    <span style={{ fontSize: 12, color: '#64748B' }}>{location}</span>
+  )}
+
+  {project?.project_type && (
+    <>
+      <span style={{ fontSize: 12, color: '#CBD5E1' }}>·</span>
+      <span style={{ fontSize: 12, color: '#64748B' }}>{project.project_type}</span>
+    </>
+  )}
+
+  {investment && (
+    <>
+      <span style={{ fontSize: 12, color: '#CBD5E1' }}>·</span>
+      <span style={{ fontSize: 12, color: '#64748B' }}>{investment} Investment</span>
+    </>
+  )}
+
+  {stage && (
+    <>
+      <span style={{ fontSize: 12, color: '#CBD5E1' }}>·</span>
+      <span style={{ fontSize: 12, color: '#64748B' }}>{stage}</span>
+    </>
+  )}
+</div>
         </div>
         <button
           onClick={() => setScreen('onboarding')}
