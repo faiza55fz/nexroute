@@ -1,16 +1,29 @@
+
+import { useEffect, useState } from 'react'
 import {
-  LayoutDashboard, FolderOpen, Map, FileText, GitBranch, Clock,
-  ClipboardList, RefreshCw, Gift, MessageSquare, BookOpen,
-  Activity, CheckSquare, BarChart2, AlertTriangle, Settings,
-  Building2, ChevronDown, LogOut, Users
+  LayoutDashboard, Map, FileText, GitBranch, Clock,
+  ClipboardList, RefreshCw, Gift, BookOpen,
+  CheckSquare, BarChart2, AlertTriangle,
+  Building2, ChevronDown, LogOut
 } from 'lucide-react'
 import type { Role, Screen } from '../App'
+
+interface Project {
+  id: number
+  name: string
+  code: string
+  project_type: string | null
+  description: string | null
+  status: string
+}
 
 interface Props {
   role: Role
   screen: Screen
   setScreen: (s: Screen) => void
   setRole: (r: Role) => void
+  projectId: number | null
+  setProjectId: (id: number) => void
 }
 
 const applicantNav = [
@@ -51,8 +64,35 @@ const roleLabels: Record<Role, string> = {
   admin: 'Nodal Authority',
 }
 
-export default function Sidebar({ role, screen, setScreen, setRole }: Props) {
-  const nav = role === 'applicant' ? applicantNav : role === 'officer' ? officerNav : adminNav
+export default function Sidebar({
+  role, screen, setScreen, setRole, projectId, setProjectId
+}: Props) {
+  const nav = role === 'applicant'
+    ? applicantNav
+    : role === 'officer' ? officerNav : adminNav
+
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loadingProjects, setLoadingProjects] = useState(true)
+  const [projectError, setProjectError] = useState('')
+
+  useEffect(() => {
+    fetch('http://127.0.0.1:8000/api/v1/projects')
+      .then(res => {
+        if (!res.ok) throw new Error('Could not load projects')
+        return res.json()
+      })
+      .then((data: Project[]) => {
+        setProjects(data)
+        setProjectError('')
+        if (data.length > 0 && !data.some(p => p.id === projectId)) {
+          setProjectId(data[0].id)
+        }
+      })
+      .catch(() => setProjectError('Backend unavailable'))
+      .finally(() => setLoadingProjects(false))
+  }, [])
+
+  const activeProject = projects.find(p => p.id === projectId)
 
   return (
     <div className="sidebar">
@@ -85,7 +125,6 @@ export default function Sidebar({ role, screen, setScreen, setRole }: Props) {
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 8,
           padding: '8px 12px',
-          cursor: 'pointer',
         }}>
           <div style={{ fontSize: 10, color: '#4A5568', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 3 }}>
             Signed in as
@@ -96,7 +135,6 @@ export default function Sidebar({ role, screen, setScreen, setRole }: Props) {
             </div>
             <ChevronDown size={12} color="#4A5568" />
           </div>
-          {/* Quick role switcher */}
           <div style={{ marginTop: 8, display: 'flex', gap: 4 }}>
             {(['applicant', 'officer', 'admin'] as Role[]).map(r => (
               <button
@@ -120,7 +158,7 @@ export default function Sidebar({ role, screen, setScreen, setRole }: Props) {
         </div>
       </div>
 
-      {/* Project chip (applicant only) */}
+      {/* Dynamic project selector */}
       {role === 'applicant' && (
         <div style={{ padding: '0 12px 8px' }}>
           <div style={{
@@ -128,20 +166,50 @@ export default function Sidebar({ role, screen, setScreen, setRole }: Props) {
             border: '1px solid rgba(37,99,235,0.25)',
             borderRadius: 6, padding: '8px 12px'
           }}>
-            <div style={{ fontSize: 10, color: '#60A5FA', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            <label htmlFor="active-project" style={{
+              fontSize: 10, color: '#60A5FA', fontWeight: 600,
+              letterSpacing: '0.05em', textTransform: 'uppercase'
+            }}>
               Active Project
-            </div>
-            <div style={{ fontSize: 12, color: '#E2E8F0', fontWeight: 600, marginTop: 2 }}>
-              ABC Manufacturing Plant
-            </div>
-            <div style={{ fontSize: 11, color: '#4A5568', marginTop: 2 }}>
-              Pune · Chemical · ₹45 Cr
-            </div>
+            </label>
+
+            {loadingProjects ? (
+              <div style={{ color: '#E2E8F0', fontSize: 12, marginTop: 6 }}>
+                Loading projects...
+              </div>
+            ) : projectError ? (
+              <div style={{ color: '#FCA5A5', fontSize: 12, marginTop: 6 }}>
+                {projectError}
+              </div>
+            ) : (
+              <>
+                <select
+                  id="active-project"
+                  value={projectId ?? ''}
+                  onChange={e => setProjectId(Number(e.target.value))}
+                  style={{
+                    width: '100%', marginTop: 6, padding: '7px 4px',
+                    background: '#10233F', color: '#E2E8F0',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: 5, fontSize: 12, fontWeight: 600
+                  }}
+                >
+                  {projects.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 5 }}>
+                  {activeProject?.project_type || 'Project type not specified'}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
 
-      {/* Nav section */}
+      {/* Navigation */}
       <div style={{ padding: '4px 0 8px' }}>
         <div className="sidebar-section-label">Navigation</div>
         {nav.map(item => {
@@ -171,7 +239,7 @@ export default function Sidebar({ role, screen, setScreen, setRole }: Props) {
         </div>
       </div>
 
-      {/* Data source indicator */}
+      {/* Demo indicator */}
       <div style={{ padding: '0 16px 16px' }}>
         <div style={{ fontSize: 10, color: '#1E3A5F', background: 'rgba(37,99,235,0.08)', borderRadius: 6, padding: '8px 10px', lineHeight: 1.6 }}>
           <span style={{ color: '#2563EB', fontWeight: 600 }}>DEMO</span> · Simulated data for prototype evaluation. Not live government integration.

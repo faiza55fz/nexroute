@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import LoginScreen from './screens/LoginScreen'
 import Sidebar from './components/Sidebar'
@@ -35,9 +36,42 @@ export type Screen =
   | 'escalation'
   | 'analytics'
 
+interface ProjectData {
+  name: string
+  sector: string
+  location: string
+  investment: string
+  stage: string
+}
+
 export default function App() {
   const [screen, setScreen] = useState<Screen>('login')
   const [role, setRole] = useState<Role>('applicant')
+  const [projectId, setProjectId] = useState<number | null>(1)
+  const [projectsRefreshKey, setProjectsRefreshKey] = useState(0)
+
+  const createProject = async (project: ProjectData) => {
+    const response = await fetch('http://127.0.0.1:8000/api/v1/projects', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(project)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null)
+      throw new Error(
+        errorData?.detail || `Project creation failed (${response.status})`
+      )
+    }
+
+    const createdProject = await response.json()
+
+    setProjectId(createdProject.id)
+    setProjectsRefreshKey(prev => prev + 1)
+    setScreen('approvals')
+  }
 
   if (screen === 'login') {
     return (
@@ -53,36 +87,72 @@ export default function App() {
   if (screen === 'onboarding') {
     return (
       <div className="main-content">
-        <Topbar role={role} screen={screen} setScreen={setScreen} onLogout={() => setScreen('login')} />
-        <OnboardingWizard onComplete={() => setScreen('approvals')} />
+        <Topbar
+          role={role}
+          screen={screen}
+          setScreen={setScreen}
+          onLogout={() => setScreen('login')}
+        />
+        <OnboardingWizard
+          setScreen={setScreen}
+          onComplete={createProject}
+        />
       </div>
     )
   }
 
   const renderScreen = () => {
     switch (screen) {
-      case 'dashboard': return <ProjectDashboard setScreen={setScreen} />
-      case 'approvals': return <ApprovalDiscovery setScreen={setScreen} />
-      case 'dependency': return <DependencyGraph setScreen={setScreen} />
-      case 'documents': return <DocumentReadiness setScreen={setScreen} />
-      case 'sla': return <SLAMonitoring setScreen={setScreen} />
-      case 'bottleneck': return <BottleneckIntelligence setScreen={setScreen} />
-      case 'inspection': return <InspectionCoordination setScreen={setScreen} />
-      case 'compliance': return <ComplianceDashboard setScreen={setScreen} />
-      case 'incentives': return <IncentivesSchemes setScreen={setScreen} />
-      case 'assistant': return <RegulatoryAssistant setScreen={setScreen} />
-      case 'gov-dashboard': return <GovDashboard setScreen={setScreen} />
-      case 'escalation': return <EscalationCenter setScreen={setScreen} />
-      case 'analytics': return <Analytics setScreen={setScreen} />
-      default: return <ProjectDashboard setScreen={setScreen} />
+      case 'dashboard':
+        return <ProjectDashboard setScreen={setScreen} />
+      case 'approvals':
+        return <ApprovalDiscovery setScreen={setScreen} />
+      case 'dependency':
+        return <DependencyGraph setScreen={setScreen} />
+      case 'documents':
+        return <DocumentReadiness setScreen={setScreen} projectId={projectId} />
+      case 'sla':
+        return <SLAMonitoring setScreen={setScreen} />
+      case 'bottleneck':
+        return <BottleneckIntelligence setScreen={setScreen} />
+      case 'inspection':
+        return <InspectionCoordination setScreen={setScreen} />
+      case 'compliance':
+        return <ComplianceDashboard setScreen={setScreen} />
+      case 'incentives':
+        return <IncentivesSchemes setScreen={setScreen} />
+      case 'assistant':
+        return <RegulatoryAssistant setScreen={setScreen} />
+      case 'gov-dashboard':
+        return <GovDashboard setScreen={setScreen} />
+      case 'escalation':
+        return <EscalationCenter setScreen={setScreen} />
+      case 'analytics':
+        return <Analytics setScreen={setScreen} />
+      default:
+        return <ProjectDashboard setScreen={setScreen} />
     }
   }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar role={role} screen={screen} setScreen={setScreen} setRole={setRole} />
+      <Sidebar
+        key={projectsRefreshKey}
+        role={role}
+        screen={screen}
+        setScreen={setScreen}
+        setRole={setRole}
+        projectId={projectId}
+        setProjectId={setProjectId}
+      />
+
       <div className="main-content" style={{ flex: 1 }}>
-        <Topbar role={role} screen={screen} setScreen={setScreen} onLogout={() => setScreen('login')} />
+        <Topbar
+          role={role}
+          screen={screen}
+          setScreen={setScreen}
+          onLogout={() => setScreen('login')}
+        />
         {renderScreen()}
       </div>
     </div>

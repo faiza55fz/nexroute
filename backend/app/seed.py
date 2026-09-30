@@ -40,16 +40,22 @@ from app.models import (
 
 
 def clear_existing_data(db: Session) -> None:
-    """Safely clear existing tables and reset autoincrement primary keys."""
-    db.execute(
-        text(
-            "TRUNCATE TABLE projects, departments, approvals, documents, "
-            "required_documents, approval_documents, slas, approval_dependencies, "
-            "escalations, escalation_histories RESTART IDENTITY CASCADE;"
-        )
-    )
-    db.commit()
+    """Clear existing records in foreign-key-safe order for SQLite."""
+    for model in (
+        EscalationHistory,
+        Escalation,
+        ApprovalDependency,
+        SLA,
+        RequiredDocument,
+        ApprovalDocument,
+        Document,
+        Approval,
+        Department,
+        Project,
+    ):
+        db.query(model).delete(synchronize_session=False)
 
+    db.commit()
 
 def seed_departments(db: Session) -> dict[str, Department]:
     """Seed the 8 realistic Maharashtra government departments and authorities."""
